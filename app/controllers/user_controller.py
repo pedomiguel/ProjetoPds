@@ -2,7 +2,7 @@ from fastapi import Depends
 
 from app.dependencies import AuthGuard
 from app.models import User
-from app.schemas import UserResponse, UserResponseWithAudios
+from app.schemas import UserResponse, UserResponseWithMediaFiles
 from app.schemas.user_schema import UserUpdate, FollowUserRequest
 from app.services import UserService
 
@@ -15,11 +15,11 @@ class UserController(BaseController):
         self.user_service = UserService()
 
     def add_routes(self) -> None:
-        @self.router.get("/me", response_model=UserResponseWithAudios)
+        @self.router.get("/me", response_model=UserResponseWithMediaFiles)
         def me(user: User = Depends(AuthGuard.get_authenticated_user)):
             user = self.user_service.user_profile(user)
 
-            return UserResponseWithAudios.model_validate(user)
+            return UserResponseWithMediaFiles.model_validate(user)
 
         @self.router.post("/follow")
         def follow_user(

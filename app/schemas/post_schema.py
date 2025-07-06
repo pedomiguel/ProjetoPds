@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 from uuid import UUID
 
-from app.schemas.audio_schema import AudioPost
+from app.schemas.media_file_schema import MediaFilePost
 from app.schemas.user_schema import UserBase
 from app.schemas.comment_schema import CommentResponse
 
@@ -28,6 +28,7 @@ class PostUpdate(BaseModel):
     pipeline_template: Optional[List[str]] = None
     audio_ids: Optional[List[UUID]] = None
 
+
 class PostAuthor(UserBase):
     is_following: bool = False
 
@@ -40,7 +41,7 @@ class PostResponse(BaseModel):
     theme: str
     description: Optional[str]
     pipeline_template: Optional[List[str]]
-    audios: List[AudioPost] = []
+    files: List[MediaFilePost] = []
     author: PostAuthor
     comments: List[CommentResponse] = []
 

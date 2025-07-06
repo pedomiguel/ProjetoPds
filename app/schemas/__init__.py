@@ -4,26 +4,17 @@ from .user_schema import (
     UserCreate,
     UserUpdate,
     FollowUserRequest,
-    UserResponseWithAudios,
+    UserResponseWithMediaFiles,
 )
-from .auth_schema import (
-    AuthCreate,
-    AuthLogin,
-    AuthLoginResponse
+from .auth_schema import AuthCreate, AuthLogin, AuthLoginResponse
+from .media_file_schema import (
+    MediaFileCreate,
+    MediaFileParentResponse,
+    MediaFilePost,
+    MediaFileSingleResponse,
+    MediaFileUpdate,
 )
-from .audio_schema import (
-    AudioCreate,
-    AudioUpdate,
-    AudioPost,
-    AudioSingleResponse,
-    AudioParentResponse
-)
-from .post_schema import (
-    PostCreateRequest,
-    PostCreate,
-    PostUpdate,
-    PostResponse
-)
+from .post_schema import PostCreateRequest, PostCreate, PostUpdate, PostResponse
 from .comment_schema import (
     CommentResponse,
     CommentCreate,

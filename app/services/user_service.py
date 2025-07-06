@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import status
 from fastapi.responses import JSONResponse
 
-from app.repositories import UserRepository, AudioRepository
+from app.repositories import UserRepository, MediaFileRepository
 from app.models import User
 from app.schemas.user_schema import UserUpdate
 from app.exceptions import NotFoundException, ConflictException
@@ -12,7 +12,7 @@ from app.exceptions import NotFoundException, ConflictException
 class UserService:
     def __init__(self):
         self.user_repository = UserRepository()
-        self.audio_repository = AudioRepository()
+        self.media_file_repository = MediaFileRepository()
 
     def user_profile(self, user: User) -> User:
         user = self.user_repository.find_by_id(user.id)
@@ -20,7 +20,7 @@ class UserService:
         if not user:
             raise NotFoundException("User not found")
 
-        audios = self.audio_repository.find_audios_by_user_id(user.id)
+        audios = self.media_file_repository.find_media_by_user_id(user.id)
 
         if audios:
             user.audios = audios

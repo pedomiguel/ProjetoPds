@@ -1,24 +1,29 @@
 from uuid import UUID
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 
+from app.models import MediaType
 
-class AudioCreate(BaseModel):
+
+class MediaFileCreate(BaseModel):
     id: UUID
     user_id: UUID
     name: str
     data_path: str
-    parent_audio_id: UUID | None = None
+    media_type: MediaType
+    parent_id: Optional[UUID] = None
 
 
-class AudioUpdate(BaseModel):
-    name: str | None = None
+class MediaFileUpdate(BaseModel):
+    name: Optional[str] = None
+    pinned: Optional[bool] = None
 
 
-class AudioPost(BaseModel):
+class MediaFilePost(BaseModel):
     id: UUID
     name: str
+    media_type: MediaType
     date_in: datetime
     data_path: str
     date_modified: datetime
@@ -26,23 +31,25 @@ class AudioPost(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class AudioSingleResponse(BaseModel):
+class MediaFileSingleResponse(BaseModel):
     id: UUID
     name: str
+    media_type: MediaType
     date_in: datetime
     data_path: str
     date_modified: datetime
-    parent_audio_id: UUID | None = None
+    parent_id: Optional[UUID] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
-class AudioParentResponse(BaseModel):
+class MediaFileParentResponse(BaseModel):
     id: UUID
     name: str
+    media_type: MediaType
     date_in: datetime
     data_path: str
     date_modified: datetime
-    children: List[AudioSingleResponse]
+    children: List[MediaFileSingleResponse]
 
     model_config = ConfigDict(from_attributes=True)

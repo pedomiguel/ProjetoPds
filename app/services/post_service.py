@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi.responses import JSONResponse
 from fastapi import status
 
-from app.repositories import PostRepository, AudioRepository, CommentRepository
+from app.repositories import PostRepository, MediaFileRepository, CommentRepository
 from app.schemas import PostCreateRequest, PostCreate, PostUpdate, CommentCreate
 from app.exceptions import NotFoundException
 from app.models import User, Post
@@ -12,27 +12,26 @@ from app.models import User, Post
 class PostService:
     def __init__(self):
         self.post_repository = PostRepository()
-        self.audio_repository = AudioRepository()
+        self.media_repository = MediaFileRepository()
         self.comment_repository = CommentRepository()
 
     def create_post(self, data: PostCreateRequest, user: User) -> JSONResponse:
-        audio_ids = data.audio_ids
-        audios = self.audio_repository.find_by_ids(audio_ids)
-        audios_dict = {audio.id: audio for audio in audios}
+        media_ids = data.media_ids
+        medias = self.media_repository.find_by_ids(media_ids)
+        medias_dict = {media.id: media for media in medias}
 
-        missing_audio_ids = []
+        missing_media_ids = []
 
-        for audio_id in audio_ids:
-            audio = audios_dict.get(audio_id)
+        for media_id in media_ids:
+            media = medias_dict.get(media_id)
+            if not media or media.user_id != user.id:
+                missing_media_ids.append(media_id)
 
-            if not audio or audio.user_id != user.id:
-                missing_audio_ids.append(audio_id)
-
-        if missing_audio_ids:
-            missing_audio_id_str = ", ".join(str(id) for id in missing_audio_ids)
+        if missing_media_ids:
+            missing_str = ", ".join(str(id) for id in missing_media_ids)
             raise NotFoundException(
-                "Audio files not found",
-                errors=[f"Audio files with IDs: {missing_audio_id_str} not found"],
+                "Media files not found",
+                errors=[f"Media files with IDs: {missing_str} not found"],
             )
 
         post = self.post_repository.create(
@@ -68,12 +67,10 @@ class PostService:
         author_ids = [user.id] + following_ids
 
         posts = self.post_repository.get_all(theme=theme, author_ids=author_ids)
-
         return self.__set_author_following_flag(posts, user)
 
     def list_all_posts(self, user: User, theme: str | None = None):
         posts = self.post_repository.get_all(theme=theme)
-
         return self.__set_author_following_flag(posts, user)
 
     def delete_post(self, post_id: UUID) -> JSONResponse:
@@ -96,7 +93,6 @@ class PostService:
             raise NotFoundException("Post not found")
 
         updated_post = self.post_repository.update(data, post)
-
         return updated_post
 
     def add_comment(

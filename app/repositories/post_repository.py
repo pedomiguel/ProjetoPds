@@ -1,7 +1,7 @@
 from uuid import UUID
 from sqlalchemy.orm import joinedload
 
-from app.models import Post, Audio, Comment
+from app.models import Post, MediaFile, Comment
 from app.schemas import PostCreate, PostUpdate
 
 from .repository import Repository
@@ -16,7 +16,7 @@ class PostRepository(Repository[Post, PostCreate, PostUpdate]):
         return (
             self.db.query(Post)
             .options(
-                joinedload(Post.audios),
+                joinedload(Post.media_files),
                 joinedload(Post.author),
                 joinedload(Post.comments).joinedload(Comment.author),
             )
@@ -26,13 +26,13 @@ class PostRepository(Repository[Post, PostCreate, PostUpdate]):
 
     def create(self, data: PostCreate) -> Post:
         data_dict = data.model_dump()
-        audio_ids = data_dict.pop("audio_ids", [])
+        media_ids = data_dict.pop("media_ids", [])
 
         post = self.model(**data_dict)
 
-        if audio_ids:
-            audios = self.db.query(Audio).filter(Audio.id.in_(audio_ids)).all()
-            post.audios.extend(audios)
+        if media_ids:
+            medias = self.db.query(MediaFile).filter(MediaFile.id.in_(media_ids)).all()
+            post.media_files.extend(medias)
 
         self.db.add(post)
         self.db.commit()
@@ -53,7 +53,7 @@ class PostRepository(Repository[Post, PostCreate, PostUpdate]):
         posts = (
             query.order_by(Post.created_at.desc())
             .options(
-                joinedload(Post.audios),
+                joinedload(Post.media_files),
                 joinedload(Post.author),
                 joinedload(Post.comments).joinedload(Comment.author),
             )
@@ -69,13 +69,13 @@ class PostRepository(Repository[Post, PostCreate, PostUpdate]):
         data_dict = data.model_dump(exclude_unset=True)
 
         for key, value in data_dict.items():
-            if key != "audio_ids":
+            if key != "media_ids":
                 setattr(model, key, value)
 
-        if "audio_ids" in data_dict:
-            audio_ids = data_dict["audio_ids"] or []
-            audios = self.db.query(Audio).filter(Audio.id.in_(audio_ids)).all()
-            model.audios = audios
+        if "media_ids" in data_dict:
+            media_ids = data_dict["media_ids"] or []
+            medias = self.db.query(MediaFile).filter(MediaFile.id.in_(media_ids)).all()
+            model.media_files = medias
 
         self.db.commit()
         self.db.refresh(model)

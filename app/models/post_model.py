@@ -34,9 +34,8 @@ class Post(BaseModel):
     )
 
     author: Mapped["User"] = relationship(back_populates="posts")
-    audios = relationship(
-        "Audio",
-        secondary="post_audio",
+    media_files: Mapped[List["MediaFile"]] = relationship(
+        secondary="post_media",
         back_populates="posts",
     )
 

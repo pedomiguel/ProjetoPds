@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from app.controllers import (
     AuthController,
     UserController,
-    AudioController,
+    MediaFileController,
     PostController,
     CommentController,
 )
@@ -17,7 +17,7 @@ class Router:
         controller_classes = [
             AuthController,
             UserController,
-            AudioController,
+            MediaFileController,
             PostController,
             CommentController,
         ]

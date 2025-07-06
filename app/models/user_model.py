@@ -34,10 +34,10 @@ class User(BaseModel):
         back_populates="following",
     )
 
-    audios: Mapped[List["Audio"]] = relationship( # pyright: ignore
-        back_populates="owner", cascade="all, delete"
+    media_files: Mapped[List["MediaFile"]] = relationship(
+        back_populates="owner", cascade="all, delete-orphan"
     )
 
-    posts: Mapped[List["Post"]] = relationship( # pyright: ignore
+    posts: Mapped[List["Post"]] = relationship(  # pyright: ignore
         back_populates="author", cascade="all, delete"
     )

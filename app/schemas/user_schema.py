@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel, EmailStr, ConfigDict
 
-from .audio_schema import AudioParentResponse
+from .media_file_schema import MediaFileParentResponse
 
 
 class UserCreate(BaseModel):
@@ -31,8 +31,8 @@ class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class UserResponseWithAudios(UserResponse):
-    audios: List[AudioParentResponse]
+class UserResponseWithMediaFiles(UserResponse):
+    media_files: List[MediaFileParentResponse]
 
 
 class FollowUserRequest(BaseModel):

@@ -3,5 +3,5 @@ from .conflict_exception import ConflictException
 from .invalid_credentials_exception import InvalidCredentialsException
 from .not_found_exception import NotFoundException
 from .unauthorized_exception import UnauthorizedException
-from .upload_audio_exception import AudioTypeNotSupportedException
+from .media_type_not_supported_exception import MediaTypeNotSupportedException
 from .forbidden_exception import ForbiddenException

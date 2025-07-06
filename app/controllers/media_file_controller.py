@@ -1,0 +1,59 @@
+from uuid import UUID
+from fastapi import Depends, File, UploadFile, Form
+from typing import List
+
+from app.dependencies import AuthGuard
+from app.services import MediaFileService
+from app.schemas.media_file_schema import (
+    MediaFileUpdate,
+    MediaFileSingleResponse,
+    MediaFileParentResponse,
+)
+from app.models import User, MediaType
+from .controller import BaseController
+
+
+class MediaFileController(BaseController):
+    def __init__(self):
+        super().__init__(tags=["MediaFile"], prefix="/media")
+        self.media_service = MediaFileService()
+
+    def add_routes(self) -> None:
+        @self.router.get("/", response_model=List[MediaFileParentResponse])
+        def get_all(user: User = Depends(AuthGuard.get_authenticated_user)):
+            medias = self.media_service.get_all(user.id)
+            return [MediaFileParentResponse.model_validate(media) for media in medias]
+
+        @self.router.post("/upload", response_model=List[MediaFileSingleResponse])
+        def upload(
+            file: UploadFile = File(...),
+            user: User = Depends(AuthGuard.get_authenticated_user),
+            pipeline: str = Form(...),
+            media_type: MediaType = Form(...),
+        ):
+            pipeline_list = [p.strip() for p in pipeline.split(",") if p.strip()]
+
+            media = self.media_service.upload(file, user.id, pipeline_list, media_type)
+
+            return [
+                MediaFileSingleResponse.model_validate(child)
+                for child in media.children
+            ]
+
+        @self.router.get("/download/{id}")
+        def download(id: UUID, user: User = Depends(AuthGuard.get_authenticated_user)):
+            return self.media_service.download(id, user.id)
+
+        @self.router.put("/update/{id}")
+        def update(
+            id: UUID,
+            data: MediaFileUpdate,
+            _: User = Depends(AuthGuard.get_authenticated_user),
+        ):
+            media_updated = self.media_service.update(data, id)
+            return MediaFileSingleResponse.model_validate(media_updated)
+
+        @self.router.delete("/delete/{id}", status_code=204)
+        def delete(id: UUID, _: User = Depends(AuthGuard.get_authenticated_user)):
+            media_deleted = self.media_service.delete(id)
+            return MediaFileSingleResponse.model_validate(media_deleted)

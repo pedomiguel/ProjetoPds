@@ -7,14 +7,14 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.config import BaseModel
 
 
-class PostAudio(BaseModel):
-    __tablename__ = "post_audio"
+class PostMedia(BaseModel):
+    __tablename__ = "post_media"
 
     post_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("posts.id", ondelete="CASCADE"), primary_key=True
     )
-    audio_id: Mapped[uuid.UUID] = mapped_column(
+    media_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("audios.id", ondelete="CASCADE"),
+        ForeignKey("media_files.id", ondelete="CASCADE"),
         primary_key=True,
     )
