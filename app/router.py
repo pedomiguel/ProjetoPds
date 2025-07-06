@@ -1,12 +1,7 @@
+import inspect
+import sys
+from app.controllers import BaseController
 from fastapi import FastAPI
-
-from app.controllers import (
-    AuthController,
-    UserController,
-    MediaFileController,
-    PostController,
-    CommentController,
-)
 
 
 class Router:
@@ -14,14 +9,8 @@ class Router:
         self.app = app
 
     def register(self):
-        controller_classes = [
-            AuthController,
-            UserController,
-            MediaFileController,
-            PostController,
-            CommentController,
-        ]
-
-        for controller_class in controller_classes:
-            controller = controller_class()
-            self.app.include_router(controller.router)
+        for name, obj in inspect.getmembers(sys.modules["app.controllers"]):
+            if inspect.isclass(obj) and issubclass(obj, BaseController):
+                if not inspect.isabstract(obj):
+                    instance = obj()
+                    self.app.include_router(instance.router)

@@ -1,22 +1,27 @@
+from abc import ABC, abstractmethod
 from uuid import UUID
 from fastapi import Depends, File, UploadFile, Form
 from typing import List
 
 from app.dependencies import AuthGuard
-from app.services import MediaFileService
+from app.services.media_file_service import MediaFileService
 from app.schemas.media_file_schema import (
     MediaFileUpdate,
     MediaFileSingleResponse,
     MediaFileParentResponse,
 )
-from app.models import User, MediaType
+from app.models import User
 from .controller import BaseController
 
 
-class MediaFileController(BaseController):
-    def __init__(self):
-        super().__init__(tags=["MediaFile"], prefix="/media")
-        self.media_service = MediaFileService()
+class MediaFileController(BaseController, ABC):
+    def __init__(self, prefix: str = "/media", tags: list[str] = ["Media"]):
+        super().__init__(tags=tags, prefix=prefix)
+
+    @property
+    @abstractmethod
+    def media_service(self) -> MediaFileService:
+        raise NotImplementedError()
 
     def add_routes(self) -> None:
         @self.router.get("/", response_model=List[MediaFileParentResponse])
@@ -29,12 +34,9 @@ class MediaFileController(BaseController):
             file: UploadFile = File(...),
             user: User = Depends(AuthGuard.get_authenticated_user),
             pipeline: str = Form(...),
-            media_type: MediaType = Form(...),
         ):
             pipeline_list = [p.strip() for p in pipeline.split(",") if p.strip()]
-
-            media = self.media_service.upload(file, user.id, pipeline_list, media_type)
-
+            media = self.media_service.upload(file, user.id, pipeline_list)
             return [
                 MediaFileSingleResponse.model_validate(child)
                 for child in media.children

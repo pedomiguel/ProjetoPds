@@ -1,18 +1,19 @@
-import shutil
-from uuid import UUID, uuid4
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List
-
+import shutil
+from uuid import uuid4, UUID
+from typing import List, Optional
 from fastapi import UploadFile
 from fastapi.responses import FileResponse
 
-from app.repositories import MediaFileRepository
 from app.models import MediaFile, MediaType
-from app.schemas.media_file_schema import MediaFileCreate, MediaFileUpdate
-from app.exceptions import NotFoundException, MediaTypeNotSupportedException
+from app.exceptions import MediaTypeNotSupportedException, NotFoundException
+from app.repositories import MediaFileRepository
+from app.services.pipeline_run_service import PipelineRunService
+from app.services.pipeline_step_service import PipelineStepService
 
 
-class MediaFileService:
+class MediaFileService(ABC):
     __ALLOWED_CONTENT_TYPES = {
         MediaType.AUDIO: [
             "audio/mpeg",
@@ -21,102 +22,20 @@ class MediaFileService:
             "audio/flac",
             "audio/aac",
         ],
-        MediaType.VIDEO: [
-            "video/mp4",
-            "video/webm",
-            "video/ogg",
-        ],
-        MediaType.IMAGE: [
-            "image/png",
-            "image/jpeg",
-            "image/webp",
-        ],
+        MediaType.VIDEO: ["video/mp4", "video/avi", "video/mkv"],
+        MediaType.IMAGE: ["image/jpeg", "image/png", "image/gif"],
     }
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.repository = MediaFileRepository()
-        # self.inference_facade = MediaInference()
 
-    def find_by_id(self, id: UUID) -> MediaFile:
-        media = self.repository.find_by_id(id)
-        if not media:
-            raise NotFoundException("Media file not found")
-        return media
-
-    def get_all(self, user_id: UUID) -> List[MediaFile]:
-        medias = self.repository.find_media_by_user_id(user_id)
-        if not medias:
-            raise NotFoundException("No media files found for this user")
-        return medias
-
-    def download(self, id: UUID, user_id: UUID):
-        media = self.find_by_id(id)
-        if not media or media.user_id != user_id:
-            raise NotFoundException("Media file not found.")
-        file_path = Path(media.data_path)
-        if not file_path.exists():
-            raise NotFoundException("Media file not found on disk")
-        return FileResponse(
-            path=str(file_path),
-            filename=file_path.name,
-            media_type="application/octet-stream",
-        )
-
-    def update(self, data: MediaFileUpdate, id: UUID) -> MediaFile:
-        media = self.find_by_id(id)
-        return self.repository.update(data, media)
-
-    def delete(self, id: UUID) -> MediaFile:
-        media = self.find_by_id(id)
-        return self.repository.delete(media)
-
-    def upload(
-        self,
-        file: UploadFile,
-        user_id: UUID,
-        pipeline: List[str],
-        media_type: MediaType,
-    ) -> MediaFile:
-        self._validate_upload(file, pipeline, media_type)
-
-        media_id = uuid4()
-        base_dir = Path(f"uploads/{user_id}/{media_id}/")
-        base_dir.mkdir(parents=True, exist_ok=True)
-        original_file_path = base_dir / file.filename
-
-        with original_file_path.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        original_media = self._create_media_instance(
-            media_id, file.filename, str(original_file_path), user_id, media_type
-        )
-
-        # current_input_path = base_dir
-        # for model_key in pipeline:
-        #     current_input_path = self._run_pipeline_step(
-        #         model_key, current_input_path, user_id, original_media.id, media_type
-        #     )
-
-        return original_media
-
-    def _validate_upload(
-        self,
-        file: UploadFile,
-        pipeline: List[str],
-        media_type: MediaType,
-    ) -> MediaType:
-        allowed_types = self.__ALLOWED_CONTENT_TYPES.get(media_type, [])
-        if file.content_type not in allowed_types:
-            allowed = ", ".join(allowed_types)
+    def _validate_upload(self, file: UploadFile, media_type: MediaType) -> None:
+        allowed = self.get_allowed_content_types().get(media_type, [])
+        if file.content_type not in allowed:
+            allowed_str = ", ".join(allowed)
             raise MediaTypeNotSupportedException(
-                f"{media_type.value} type not supported. Allowed: {allowed}"
+                f"{media_type.value} type not supported. Allowed types: {allowed_str}"
             )
-
-        # for key in pipeline:
-        #     if key not in MODEL_CONFIG_MAP:
-        #         raise ValueError(f"Unsupported model in pipeline: {key}")
-
-        return media_type
 
     def _create_media_instance(
         self,
@@ -125,34 +44,112 @@ class MediaFileService:
         path: str,
         user_id: UUID,
         media_type: MediaType,
-        parent_id: UUID | None = None,
+        parent_id: Optional[UUID] = None,
     ) -> MediaFile:
-        return self.repository.create(
-            MediaFileCreate(
-                id=media_id,
-                name=name,
-                data_path=path,
-                user_id=user_id,
-                media_type=media_type,
-                parent_id=parent_id,
-            )
+
+        media = MediaFile(
+            id=media_id,
+            name=name,
+            data_path=path,
+            user_id=user_id,
+            media_type=media_type,
+            parent_id=parent_id,
+        )
+        return self.repository.create(media)
+
+    @abstractmethod
+    def get_allowed_content_types(self) -> dict[MediaType, List[str]]:
+        return self.__ALLOWED_CONTENT_TYPES
+
+    @abstractmethod
+    def get_pipeline_step_factory(self) -> dict[str, type[PipelineStepService]]:
+        pass
+
+    def _instantiate_pipeline_step(self, key: str) -> Optional[PipelineStepService]:
+        factory = self.get_pipeline_step_factory()
+        StepClass = factory.get(key)
+        if StepClass:
+            return StepClass()
+        return None
+
+    def upload(
+        self,
+        file: UploadFile,
+        user_id: UUID,
+        pipeline: List[str],
+        media_type: MediaType,
+    ) -> List[MediaFile]:
+        self._validate_upload(file, media_type)
+
+        media_id = uuid4()
+        base_dir = Path(f"uploads/{user_id}/{media_id}/")
+        base_dir.mkdir(parents=True, exist_ok=True)
+
+        original_file_path = base_dir / file.filename
+
+        with original_file_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        original_media = self._create_media_instance(
+            media_id=media_id,
+            name=file.filename,
+            path=str(original_file_path),
+            user_id=user_id,
+            media_type=media_type,
         )
 
-    def _run_pipeline_step(
-        self,
-        model_key: str,
-        input_path: Path,
-        user_id: UUID,
-        parent_id: UUID,
-        media_type: MediaType,
-    ) -> Path:
-        return None
-        # self.model_downloader.download_model(model_key)
-        # outputs = self.inference_facade.pipeline_inference(str(input_path), model_key)
+        steps_instances = []
+        for key in pipeline:
+            step = self._instantiate_pipeline_step(key)
+            if step:
+                steps_instances.append(step)
 
-        # for output in outputs:
-        #     self._create_media_instance(
-        #         uuid4(), output["name"], output["path"], user_id, media_type, parent_id
-        #     )
+        runner = PipelineRunService(steps_instances)
+        all_media = runner.run(original_media, user_id)
 
-        # return Path(outputs[0]["path"]).parent if outputs else input_path
+        return all_media
+
+    def get_all(self, user_id: UUID) -> List[MediaFile]:
+        medias = self.repository.find_media_by_user_id(user_id)
+        if not medias:
+            raise NotFoundException("No media files found for this user.")
+        return medias
+
+    def find_by_id(self, id: UUID) -> MediaFile:
+        media = self.repository.find_by_id(id)
+        if not media:
+            raise NotFoundException("Media file not found.")
+        return media
+
+    def update(self, data: dict, id: UUID) -> MediaFile:
+        media = self.find_by_id(id)
+        for key, value in data.items():
+            if hasattr(media, key):
+                setattr(media, key, value)
+        self.repository.db.commit()
+        self.repository.db.refresh(media)
+        return media
+
+    def delete(self, id: UUID) -> MediaFile:
+        media = self.find_by_id(id)
+        self.repository.delete(media)
+        return media
+
+    def download(self, id: UUID, user_id: UUID) -> FileResponse:
+        media = self.find_by_id(id)
+        if media.user_id != user_id:
+            raise NotFoundException("Media file not found.")
+        file_path = Path(media.data_path)
+        if not file_path.exists():
+            raise NotFoundException("Media file not found on disk.")
+        media_type_mime = self._get_mime_type(media.media_type)
+        return FileResponse(
+            path=str(file_path),
+            filename=file_path.name,
+            media_type=media_type_mime,
+        )
+
+    def _get_mime_type(self, media_type: MediaType) -> str:
+        allowed = self.get_allowed_content_types().get(media_type, [])
+
+        return allowed[0] if allowed else "application/octet-stream"

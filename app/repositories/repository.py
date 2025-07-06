@@ -33,14 +33,16 @@ class Repository(ABC, Generic[T, C, U]):
     ) -> List[T]:
         return self.db.query(self.model).all()
 
-    def create(self, data: C) -> T:
-        data_dict = data.model_dump()  # pyright: ignore
-        obj = self.model(**data_dict)
+    def create(self, data: C, extra_attrs: dict | None = None) -> T:
+        data_dict = data.model_dump()
 
+        if extra_attrs:
+            data_dict.update(extra_attrs)
+
+        obj = self.model(**data_dict)
         self.db.add(obj)
         self.db.commit()
         self.db.refresh(obj)
-
         return obj
 
     def delete(self, model: T) -> T:
