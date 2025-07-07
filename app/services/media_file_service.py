@@ -11,6 +11,7 @@ from app.exceptions import MediaTypeNotSupportedException, NotFoundException
 from app.repositories import MediaFileRepository
 from app.services.pipeline_run_service import PipelineRunService
 from app.services.pipeline_step_service import PipelineStepService
+from app.schemas import MediaFileCreate
 
 
 class MediaFileService(ABC):
@@ -47,7 +48,7 @@ class MediaFileService(ABC):
         parent_id: Optional[UUID] = None,
     ) -> MediaFile:
 
-        media = MediaFile(
+        media = MediaFileCreate(
             id=media_id,
             name=name,
             data_path=path,
@@ -61,24 +62,37 @@ class MediaFileService(ABC):
     def get_allowed_content_types(self) -> dict[MediaType, List[str]]:
         return self.__ALLOWED_CONTENT_TYPES
 
+    @property
     @abstractmethod
-    def get_pipeline_step_factory(self) -> dict[str, type[PipelineStepService]]:
+    def pipeline_step_factory(self) -> dict:
         pass
 
     def _instantiate_pipeline_step(self, key: str) -> Optional[PipelineStepService]:
-        factory = self.get_pipeline_step_factory()
+        factory = self.pipeline_step_factory
+
         StepClass = factory.get(key)
+
         if StepClass:
             return StepClass()
         return None
+
+    def get_media_type(self, file: UploadFile) -> MediaType:
+        for media_type, allowed_types in self.get_allowed_content_types().items():
+            if file.content_type in allowed_types:
+                return media_type
+
+        raise MediaTypeNotSupportedException(
+            f"Unsupported media type: {file.content_type}"
+        )
 
     def upload(
         self,
         file: UploadFile,
         user_id: UUID,
         pipeline: List[str],
-        media_type: MediaType,
     ) -> List[MediaFile]:
+        media_type = self.get_media_type(file)
+
         self._validate_upload(file, media_type)
 
         media_id = uuid4()

@@ -41,3 +41,5 @@ class User(BaseModel):
     posts: Mapped[List["Post"]] = relationship(  # pyright: ignore
         back_populates="author", cascade="all, delete"
     )
+
+    pipeline_runs = relationship("PipelineRun", back_populates="user")

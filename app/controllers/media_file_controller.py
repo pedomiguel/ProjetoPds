@@ -36,10 +36,9 @@ class MediaFileController(BaseController, ABC):
             pipeline: str = Form(...),
         ):
             pipeline_list = [p.strip() for p in pipeline.split(",") if p.strip()]
-            media = self.media_service.upload(file, user.id, pipeline_list)
+            media_list = self.media_service.upload(file, user.id, pipeline_list)
             return [
-                MediaFileSingleResponse.model_validate(child)
-                for child in media.children
+                MediaFileSingleResponse.model_validate(media) for media in media_list
             ]
 
         @self.router.get("/download/{id}")
