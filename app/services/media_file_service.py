@@ -15,23 +15,21 @@ from app.schemas import MediaFileCreate
 
 
 class MediaFileService(ABC):
-    __ALLOWED_CONTENT_TYPES = {
-        MediaType.AUDIO: [
-            "audio/mpeg",
-            "audio/wav",
-            "audio/ogg",
-            "audio/flac",
-            "audio/aac",
-        ],
-        MediaType.VIDEO: ["video/mp4", "video/avi", "video/mkv"],
-        MediaType.IMAGE: ["image/jpeg", "image/png", "image/gif"],
-    }
-
     def __init__(self):
         self.repository = MediaFileRepository()
 
+    @property
+    @abstractmethod
+    def content_types(self) -> dict[MediaType, List[str]]:
+        pass
+
+    @property
+    @abstractmethod
+    def pipeline_step_factory(self) -> dict:
+        pass
+
     def _validate_upload(self, file: UploadFile, media_type: MediaType) -> None:
-        allowed = self.get_allowed_content_types().get(media_type, [])
+        allowed = self.content_types.get(media_type, [])
         if file.content_type not in allowed:
             allowed_str = ", ".join(allowed)
             raise MediaTypeNotSupportedException(
@@ -47,7 +45,6 @@ class MediaFileService(ABC):
         media_type: MediaType,
         parent_id: Optional[UUID] = None,
     ) -> MediaFile:
-
         media = MediaFileCreate(
             id=media_id,
             name=name,
@@ -56,16 +53,8 @@ class MediaFileService(ABC):
             media_type=media_type,
             parent_id=parent_id,
         )
+
         return self.repository.create(media)
-
-    @abstractmethod
-    def get_allowed_content_types(self) -> dict[MediaType, List[str]]:
-        return self.__ALLOWED_CONTENT_TYPES
-
-    @property
-    @abstractmethod
-    def pipeline_step_factory(self) -> dict:
-        pass
 
     def _instantiate_pipeline_step(self, key: str) -> Optional[PipelineStepService]:
         factory = self.pipeline_step_factory
@@ -74,10 +63,11 @@ class MediaFileService(ABC):
 
         if StepClass:
             return StepClass()
+
         return None
 
     def get_media_type(self, file: UploadFile) -> MediaType:
-        for media_type, allowed_types in self.get_allowed_content_types().items():
+        for media_type, allowed_types in self.content_types.items():
             if file.content_type in allowed_types:
                 return media_type
 
@@ -113,6 +103,7 @@ class MediaFileService(ABC):
         )
 
         steps_instances = []
+
         for key in pipeline:
             step = self._instantiate_pipeline_step(key)
             if step:
@@ -137,25 +128,21 @@ class MediaFileService(ABC):
 
     def update(self, data: dict, id: UUID) -> MediaFile:
         media = self.find_by_id(id)
-        for key, value in data.items():
-            if hasattr(media, key):
-                setattr(media, key, value)
-        self.repository.db.commit()
-        self.repository.db.refresh(media)
-        return media
+        return self.repository.update(data, media)
 
     def delete(self, id: UUID) -> MediaFile:
         media = self.find_by_id(id)
-        self.repository.delete(media)
-        return media
+        return self.repository.delete(media)
 
     def download(self, id: UUID, user_id: UUID) -> FileResponse:
         media = self.find_by_id(id)
         if media.user_id != user_id:
             raise NotFoundException("Media file not found.")
+
         file_path = Path(media.data_path)
         if not file_path.exists():
             raise NotFoundException("Media file not found on disk.")
+
         media_type_mime = self._get_mime_type(media.media_type)
         return FileResponse(
             path=str(file_path),
@@ -164,6 +151,6 @@ class MediaFileService(ABC):
         )
 
     def _get_mime_type(self, media_type: MediaType) -> str:
-        allowed = self.get_allowed_content_types().get(media_type, [])
+        allowed = self.content_types.get(media_type, [])
 
         return allowed[0] if allowed else "application/octet-stream"
