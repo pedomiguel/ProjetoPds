@@ -18,6 +18,7 @@ class MediaFileCreate(BaseModel):
 class MediaFileUpdate(BaseModel):
     name: Optional[str] = None
     pinned: Optional[bool] = None
+    media_metadata: Optional[dict] = None
 
 
 class MediaFilePost(BaseModel):
@@ -27,6 +28,7 @@ class MediaFilePost(BaseModel):
     date_in: datetime
     data_path: str
     date_modified: datetime
+    media_metadata: Optional[dict] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -39,6 +41,7 @@ class MediaFileSingleResponse(BaseModel):
     data_path: str
     date_modified: datetime
     parent_id: Optional[UUID] = None
+    media_metadata: Optional[dict] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -51,5 +54,6 @@ class MediaFileParentResponse(BaseModel):
     data_path: str
     date_modified: datetime
     children: List[MediaFileSingleResponse]
+    media_metadata: Optional[dict] = None
 
     model_config = ConfigDict(from_attributes=True)

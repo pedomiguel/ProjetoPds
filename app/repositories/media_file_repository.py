@@ -18,7 +18,9 @@ class MediaFileRepository(Repository[MediaFile, MediaFileCreate, MediaFileUpdate
         query = (
             self.db.query(MediaFile)
             .filter(MediaFile.user_id == user_id, MediaFile.parent_id == None)
-            .options(joinedload(MediaFile.children))
+            .options(
+                joinedload(MediaFile.children),
+            )
             .order_by(MediaFile.date_in.desc())
         )
 

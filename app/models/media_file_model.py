@@ -5,7 +5,7 @@ from typing import List, Optional
 from sqlalchemy import ForeignKey, String, TIMESTAMP, Boolean, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from sqlalchemy.dialects.postgresql import UUID as pgUUID
+from sqlalchemy.dialects.postgresql import UUID as pgUUID, JSONB
 import enum
 
 from app.config import BaseModel
@@ -33,6 +33,7 @@ class MediaFile(BaseModel):
     data_path: Mapped[str] = mapped_column(String, nullable=False)
     pinned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     media_type: Mapped[MediaType] = mapped_column(Enum(MediaType), nullable=False)
+    media_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE")

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
-from fastapi import Depends, File, UploadFile, Form
+from fastapi import Depends, File, UploadFile, Form, BackgroundTasks
 from typing import List
 
 from app.dependencies import AuthGuard
@@ -31,12 +31,15 @@ class MediaFileController(BaseController, ABC):
 
         @self.router.post("/upload", response_model=List[MediaFileSingleResponse])
         def upload(
+            background_tasks: BackgroundTasks,
             file: UploadFile = File(...),
-            user: User = Depends(AuthGuard.get_authenticated_user),
             pipeline: str = Form(...),
+            user: User = Depends(AuthGuard.get_authenticated_user),
         ):
             pipeline_list = [p.strip() for p in pipeline.split(",") if p.strip()]
-            media_list = self.media_service.upload(file, user.id, pipeline_list)
+            media_list = self.media_service.upload(
+                file, user.id, pipeline_list, background_tasks
+            )
             return [
                 MediaFileSingleResponse.model_validate(media) for media in media_list
             ]

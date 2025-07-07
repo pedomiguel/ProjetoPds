@@ -3,7 +3,7 @@ from pathlib import Path
 import shutil
 from uuid import uuid4, UUID
 from typing import List, Optional
-from fastapi import UploadFile
+from fastapi import UploadFile, BackgroundTasks
 from fastapi.responses import FileResponse
 
 from app.models import MediaFile, MediaType
@@ -11,7 +11,9 @@ from app.exceptions import MediaTypeNotSupportedException, NotFoundException
 from app.repositories import MediaFileRepository
 from app.services.pipeline_run_service import PipelineRunService
 from app.services.pipeline_step_service import PipelineStepService
-from app.schemas import MediaFileCreate
+from app.schemas import MediaFileCreate, MediaFileUpdate
+
+from app.extractors.media_metadata_extractor import MediaMetadataExtractor
 
 
 class MediaFileService(ABC):
@@ -26,6 +28,11 @@ class MediaFileService(ABC):
     @property
     @abstractmethod
     def pipeline_step_factory(self) -> dict:
+        pass
+
+    @property
+    @abstractmethod
+    def metadata_extractor(self) -> MediaMetadataExtractor:
         pass
 
     def _validate_upload(self, file: UploadFile, media_type: MediaType) -> None:
@@ -80,6 +87,7 @@ class MediaFileService(ABC):
         file: UploadFile,
         user_id: UUID,
         pipeline: List[str],
+        background_tasks: BackgroundTasks,
     ) -> List[MediaFile]:
         media_type = self.get_media_type(file)
 
@@ -111,6 +119,10 @@ class MediaFileService(ABC):
 
         runner = PipelineRunService(steps_instances)
         all_media = runner.run(original_media, user_id)
+
+        for media in all_media:
+            if not media.media_metadata:
+                background_tasks.add_task(self._extract_metadata, media)
 
         return all_media
 
@@ -154,3 +166,16 @@ class MediaFileService(ABC):
         allowed = self.content_types.get(media_type, [])
 
         return allowed[0] if allowed else "application/octet-stream"
+
+    def _extract_metadata(self, media: MediaFile):
+        extractor = self.metadata_extractor
+        metadata_dict = extractor.extract(Path(media.data_path))
+
+        print(f"Extracted metadata: {metadata_dict}")
+
+        self.repository.update(
+            MediaFileUpdate(
+                media_metadata=metadata_dict,
+            ),
+            media,
+        )
