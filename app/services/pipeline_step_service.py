@@ -10,7 +10,7 @@ class PipelineStepService:
     def __init__(self):
         self.repository = MediaFileRepository()
 
-    def process(self, media_file: MediaFile, user_id: UUID) -> list[MediaFile]:
+    def process(self, media_file: MediaFile, user_id: UUID) -> MediaFile:
         raise NotImplementedError("Must implement process method")
 
     def _create_child_media_file(
