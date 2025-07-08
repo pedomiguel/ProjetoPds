@@ -118,7 +118,7 @@ class MediaFileService(ABC):
                 steps_instances.append(step)
 
         runner = PipelineRunService(steps_instances)
-        all_media = runner.run(original_media, user_id)
+        all_media = runner.run(original_media)
 
         for media in all_media:
             if not media.media_metadata:
