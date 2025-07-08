@@ -10,12 +10,12 @@ class PipelineRunService:
     def __init__(self, steps: List[PipelineStepService]):
         self.steps = steps
 
-    def run(self, original_media: MediaFile, user_id: UUID) -> List[MediaFile]:
+    def run(self, original_media: MediaFile) -> List[MediaFile]:
         all_media = [original_media]
         current_media = original_media
 
         for step in self.steps:
-            new_media = step.process(current_media, user_id)
+            new_media = step.process(current_media)
             all_media.append(new_media)
             current_media = new_media
 
