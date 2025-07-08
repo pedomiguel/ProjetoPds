@@ -4,3 +4,4 @@ from .user_controller import UserController
 from .media_file_controller import MediaFileController
 from .post_controller import PostController
 from .comment_controller import CommentController
+from .image_media_file_controller import ImageMediaFileController
