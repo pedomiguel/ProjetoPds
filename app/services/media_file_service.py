@@ -171,8 +171,6 @@ class MediaFileService(ABC):
         extractor = self.metadata_extractor
         metadata_dict = extractor.extract(Path(media.data_path))
 
-        print(f"Extracted metadata: {metadata_dict}")
-
         self.repository.update(
             MediaFileUpdate(
                 media_metadata=metadata_dict,
