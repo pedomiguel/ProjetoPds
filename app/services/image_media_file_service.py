@@ -1,6 +1,8 @@
 from app.services.media_file_service import MediaFileService
 from app.services.grayscale_image_step_service import (
     GrayscaleImageStep,
+)
+from app.services.invert_color_image_step_service import (
     InvertColorsImageStep,
 )
 from app.services.pipeline_step_service import PipelineStepService
