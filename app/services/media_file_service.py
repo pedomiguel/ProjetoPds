@@ -32,7 +32,7 @@ class MediaFileService(ABC):
 
     @property
     @abstractmethod
-    def metadata_extractor(self) -> MediaMetadataExtractor:
+    def metadata_extractor(self) -> MediaMetadataExtractor | None:
         pass
 
     def _validate_upload(self, file: UploadFile, media_type: MediaType) -> None:
@@ -169,6 +169,9 @@ class MediaFileService(ABC):
 
     def _extract_metadata(self, media: MediaFile):
         extractor = self.metadata_extractor
+        if not extractor:
+            return
+
         metadata_dict = extractor.extract(Path(media.data_path))
 
         self.repository.update(
