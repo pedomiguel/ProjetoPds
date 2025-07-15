@@ -10,6 +10,7 @@ import shutil
 from app.models import MediaFile, MediaType
 from app.schemas import MediaFileCreate
 from app.repositories import MediaFileRepository
+from app.exceptions.unable_to_save_file_exception import UnableToSaveFileException
 
 
 class PipelineStepService(ABC):
@@ -50,25 +51,28 @@ class PipelineStepService(ABC):
         output_name = f"{original_path.stem}{timestamp}{original_path.suffix}"
         output_path = original_path.parent / output_name
 
-        if isinstance(file_data, Image.Image):
-            file_data.save(output_path)
-        elif isinstance(file_data, Path):
-            shutil.copy(file_data, output_path)
-        elif isinstance(file_data, bytes):
-            with open(output_path, "wb") as f:
-                f.write(file_data)
-        else:
-            raise ValueError("Unsupported file_data type")
+        try:
+            if isinstance(file_data, Image.Image):
+                file_data.save(output_path)
+            elif isinstance(file_data, Path):
+                shutil.copy(file_data, output_path)
+            elif isinstance(file_data, bytes):
+                with open(output_path, "wb") as f:
+                    f.write(file_data)
+            else:
+                raise ValueError("Unsupported file_data type")
 
-        if parent_media_file.parent_id:
-            parent_id = parent_media_file.parent_id
-        else:
-            parent_id = parent_media_file.id
+            if parent_media_file.parent_id:
+                parent_id = parent_media_file.parent_id
+            else:
+                parent_id = parent_media_file.id
 
-        return self._create_media_file(
-            name=output_name,
-            path=str(output_path),
-            user_id=parent_media_file.user_id,
-            media_type=parent_media_file.media_type,
-            parent_id=parent_id,
-        )
+            return self._create_media_file(
+                name=output_name,
+                path=str(output_path),
+                user_id=parent_media_file.user_id,
+                media_type=parent_media_file.media_type,
+                parent_id=parent_id,
+            )
+        except Exception:
+            raise UnableToSaveFileException()

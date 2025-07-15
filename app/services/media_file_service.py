@@ -169,6 +169,7 @@ class MediaFileService(ABC):
 
     def _extract_metadata(self, media: MediaFile):
         extractor = self.metadata_extractor
+
         if not extractor:
             return
 
