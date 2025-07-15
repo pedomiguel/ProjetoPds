@@ -7,7 +7,12 @@ from app.services.invert_color_image_step_service import (
 )
 from app.services.pipeline_step_service import PipelineStepService
 from app.models.media_file_model import MediaType
-from app.extractors.image_metadata_extractor import ImageMetadataExtractor
+from app.extractors.media_metadata_extractor import MediaMetadataExtractor
+from app.extractors.image_color_extractor import ImageColorExtractor
+from app.extractors.image_data_extractor import ImageDataExtractor
+from app.extractors.image_face_extractor import ImageFaceExtractor
+from app.extractors.image_object_extractor import ImageObjectExtractor
+from app.extractors.image_scene_extractor import ImageSceneExtractor
 
 
 class ImageMediaFileService(MediaFileService):
@@ -21,4 +26,12 @@ class ImageMediaFileService(MediaFileService):
 
     @property
     def metadata_extractor(self):
-        return ImageMetadataExtractor()
+        return MediaMetadataExtractor(
+            strategies=[
+                ImageColorExtractor(),
+                ImageDataExtractor(),
+                ImageFaceExtractor(),
+                ImageObjectExtractor(),
+                ImageSceneExtractor(),
+            ]
+        )

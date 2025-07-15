@@ -17,3 +17,5 @@ app/extractor_app
 
 uploads/
 artifacts/
+
+scene_categories.txt
