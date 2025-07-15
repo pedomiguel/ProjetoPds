@@ -11,6 +11,7 @@ class BlurImageStepService(PipelineStepService):
         try:
             image = Image.open(Path(media_file.data_path))
             blurred = image.filter(ImageFilter.GaussianBlur(radius=2))
+
             return self._save_media_file(
                 parent_media_file=media_file, file_data=blurred
             )

@@ -11,6 +11,7 @@ class EdgeDetectImageStepService(PipelineStepService):
         try:
             image = Image.open(Path(media_file.data_path))
             edged = image.filter(ImageFilter.FIND_EDGES)
+
             return self._save_media_file(parent_media_file=media_file, file_data=edged)
         except Exception:
             return media_file
