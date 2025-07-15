@@ -9,7 +9,7 @@ class Router:
         self.app = app
 
     def register(self):
-        for name, obj in inspect.getmembers(sys.modules["app.controllers"]):
+        for _, obj in inspect.getmembers(sys.modules["app.controllers"]):
             if inspect.isclass(obj) and issubclass(obj, BaseController):
                 if not inspect.isabstract(obj):
                     instance = obj()

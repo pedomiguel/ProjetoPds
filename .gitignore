@@ -17,3 +17,7 @@ app/extractor_app
 
 uploads/
 artifacts/
+
+# Ignorar arquivos de desenvolvimento
+*.vim
+*.sh

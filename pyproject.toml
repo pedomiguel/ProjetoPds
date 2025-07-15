@@ -18,4 +18,6 @@ dependencies = [
     "python-multipart>=0.0.20",
     "wxpython==4.2.2",
     "huggingface-hub>=0.32.0",
+    "whisper>=1.1.10",
+    "moviepy>=2.2.1",
 ]
