@@ -1,0 +1,19 @@
+.env
+.venv/
+
+# Ignorar a pasta de cache do Python
+__pycache__/
+*.pyc
+
+# Ignorar arquivos de distribuição do pacote Python (egg-info)
+*.egg-info/
+
+# Ignorar arquivos de build
+build/
+dist/
+
+# Ignorar arquivos da Music Source Separation Universal Training Code
+app/extractor_app
+
+uploads/
+artifacts/
