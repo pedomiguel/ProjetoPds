@@ -72,10 +72,14 @@ class MediaFileService(ABC):
 
             StepClass = factory.get(key)
 
+            print(StepClass)
+
             if StepClass:
                 return StepClass()
 
             raise NotFoundException(f"Pipeline step '{key}' not found.")
+        except NotFoundException as e:
+            raise e
         except Exception:
             raise UnableToCreatePipelineException()
 
