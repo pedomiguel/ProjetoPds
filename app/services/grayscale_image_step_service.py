@@ -7,7 +7,10 @@ from app.services.pipeline_step_service import PipelineStepService
 
 class GrayscaleImageStep(PipelineStepService):
     def process(self, media_file: MediaFile) -> MediaFile:
-        original_path = Path(media_file.data_path)
-        image = Image.open(original_path).convert("L")
+        try:
+            original_path = Path(media_file.data_path)
+            image = Image.open(original_path).convert("L")
 
-        return self._save_media_file(parent_media_file=media_file, file_data=image)
+            return self._save_media_file(parent_media_file=media_file, file_data=image)
+        except Exception:
+            return media_file

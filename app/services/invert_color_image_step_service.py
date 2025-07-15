@@ -8,8 +8,13 @@ from app.services.pipeline_step_service import PipelineStepService
 
 class InvertColorsImageStep(PipelineStepService):
     def process(self, media_file: MediaFile) -> MediaFile:
-        original_path = Path(media_file.data_path)
-        image = Image.open(original_path).convert("RGB")
-        inverted = ImageOps.invert(image)
+        try:
+            original_path = Path(media_file.data_path)
+            image = Image.open(original_path).convert("RGB")
+            inverted = ImageOps.invert(image)
 
-        return self._save_media_file(parent_media_file=media_file, file_data=inverted)
+            return self._save_media_file(
+                parent_media_file=media_file, file_data=inverted
+            )
+        except Exception:
+            return media_file
