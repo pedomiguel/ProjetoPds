@@ -60,10 +60,15 @@ class PipelineStepService(ABC):
         else:
             raise ValueError("Unsupported file_data type")
 
+        if parent_media_file.parent_id:
+            parent_id = parent_media_file.parent_id
+        else:
+            parent_id = parent_media_file.id
+
         return self._create_media_file(
             name=output_name,
             path=str(output_path),
             user_id=parent_media_file.user_id,
             media_type=parent_media_file.media_type,
-            parent_id=parent_media_file.id,
+            parent_id=parent_id,
         )
