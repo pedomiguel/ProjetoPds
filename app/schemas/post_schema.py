@@ -41,7 +41,7 @@ class PostResponse(BaseModel):
     theme: str
     description: Optional[str]
     pipeline_template: Optional[List[str]]
-    files: List[MediaFilePost] = []
+    media_files: List[MediaFilePost] = []
     author: PostAuthor
     comments: List[CommentResponse] = []
 
