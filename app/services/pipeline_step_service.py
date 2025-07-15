@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+
 from uuid import uuid4, UUID
 from typing import Optional, Union
 from pathlib import Path
@@ -10,12 +12,13 @@ from app.schemas import MediaFileCreate
 from app.repositories import MediaFileRepository
 
 
-class PipelineStepService:
+class PipelineStepService(ABC):
     def __init__(self):
         self.repository = MediaFileRepository()
 
+    @abstractmethod
     def process(self, media_file: MediaFile) -> MediaFile:
-        raise NotImplementedError("Must implement process method")
+        pass
 
     def _create_media_file(
         self,
