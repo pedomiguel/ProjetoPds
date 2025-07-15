@@ -1,10 +1,11 @@
 from app.services.media_file_service import MediaFileService
-from app.services.grayscale_image_step_service import (
-    GrayscaleImageStep,
-)
-from app.services.invert_color_image_step_service import (
-    InvertColorsImageStep,
-)
+
+from app.services.grayscale_image_step_service import GrayscaleImageStep
+from app.services.invert_color_image_step_service import InvertColorsImageStep
+from app.services.blur_image_step_service import BlurImageStepService
+from app.services.edge_detect_image_step_service import EdgeDetectImageStepService
+from app.services.sepia_image_step_service import SepiaImageStepService
+
 from app.services.pipeline_step_service import PipelineStepService
 from app.models.media_file_model import MediaType
 from app.extractors.media_metadata_extractor import MediaMetadataExtractor
@@ -18,7 +19,13 @@ from app.extractors.image_scene_extractor import ImageSceneExtractor
 class ImageMediaFileService(MediaFileService):
     @property
     def pipeline_step_factory(self) -> dict[str, type[PipelineStepService]]:
-        return {"grayscale": GrayscaleImageStep, "invert": InvertColorsImageStep}
+        return {
+            "grayscale": GrayscaleImageStep,
+            "invert": InvertColorsImageStep,
+            "blur": BlurImageStepService,
+            "edge_detect": EdgeDetectImageStepService,
+            "sepia": SepiaImageStepService,
+        }
 
     @property
     def content_types(self) -> dict[MediaType, list[str]]:
