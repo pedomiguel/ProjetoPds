@@ -9,7 +9,10 @@ class MediaMetadataExtractor:
         metadata = {}
 
         for strategy in self.strategies:
-            result = strategy.extract(file_path)
-            metadata.update(result)
+            try:
+                result = strategy.extract(file_path)
+                metadata.update(result)
+            except Exception:
+                continue
 
         return metadata
