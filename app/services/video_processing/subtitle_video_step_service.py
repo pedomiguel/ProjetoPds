@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import whisper
 from moviepy import VideoFileClip, TextClip, CompositeVideoClip
 
@@ -13,6 +14,8 @@ class SubtitleVideoStep(PipelineStepService):
         video = VideoFileClip(video_path)
         video.audio.write_audiofile(audio_path)
 
+        width, height = video.size
+
         model = whisper.load_model("base")
         result = model.transcribe(audio_path)
         os.remove(audio_path)
@@ -24,14 +27,16 @@ class SubtitleVideoStep(PipelineStepService):
             text = segment["text"].strip()
 
             text_clip = (
-                TextClip(text, font_size=24, color='white', bg_color='black', font='Arial')
-                .with_position("centet", "bottom")
-                .with_stat(start)
+                TextClip(text=text, font_size=24, color="white", method="caption", size=(width, 100))
+                .with_position("center", "bottom")
+                .with_start(start)
                 .with_duration(end - start)
             )
             subtitles.append(text_clip)
 
         subtitle_video = CompositeVideoClip([video, *subtitles])
-        final = subtitle_video.write_videofile(f"{video_path}_subtilte.mp4", codec="libx264", audio_codec="aac")
+        output_path = Path(video_path).with_name(f"{Path(video_path).stem}_subtilte.mp4")
 
-        return self._save_media_file(media_file, final)
+        subtitle_video.write_videofile(str(output_path), codec="libx264", audio_codec="aac")
+
+        return self._save_media_file(media_file, output_path)

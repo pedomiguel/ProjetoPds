@@ -19,5 +19,9 @@ dependencies = [
     "wxpython==4.2.2",
     "huggingface-hub>=0.32.0",
     "whisper>=1.1.10",
+    "openai-whisper",
     "moviepy>=2.2.1",
 ]
+
+[tool.uv.sources]
+openai-whisper = { git = "https://github.com/openai/whisper.git" }

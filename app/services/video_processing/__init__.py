@@ -1,1 +1,2 @@
 from .subtitle_video_step_service import SubtitleVideoStep
+from .speed_up_video_step_services import SpeedUpVideoStep

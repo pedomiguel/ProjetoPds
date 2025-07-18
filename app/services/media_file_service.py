@@ -6,6 +6,7 @@ from typing import List, Optional
 from fastapi import UploadFile, BackgroundTasks
 from fastapi.responses import FileResponse
 
+from app.extractors.video_metadata_extractor import VideoMetadataExtractor
 from app.models import MediaFile, MediaType
 from app.exceptions import MediaTypeNotSupportedException, NotFoundException
 from app.repositories import MediaFileRepository
@@ -33,7 +34,7 @@ class MediaFileService(ABC):
     @property
     @abstractmethod
     def metadata_extractor(self) -> MediaMetadataExtractor:
-        pass
+        return VideoMetadataExtractor()
 
     def _validate_upload(self, file: UploadFile, media_type: MediaType) -> None:
         allowed = self.content_types.get(media_type, [])
@@ -168,7 +169,12 @@ class MediaFileService(ABC):
         return allowed[0] if allowed else "application/octet-stream"
 
     def _extract_metadata(self, media: MediaFile):
+        return
         extractor = self.metadata_extractor
+
+        if not extractor:
+            return
+
         metadata_dict = extractor.extract(Path(media.data_path))
 
         self.repository.update(
