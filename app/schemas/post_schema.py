@@ -13,7 +13,7 @@ class PostCreateRequest(BaseModel):
     title: str
     theme: str
     description: Optional[str] = None
-    audio_ids: List[UUID] = Field(default_factory=list)
+    media_ids: List[UUID] = Field(default_factory=list)
     pipeline_template: Optional[List[str]] = None
 
 
@@ -26,7 +26,7 @@ class PostUpdate(BaseModel):
     theme: Optional[str] = None
     description: Optional[str] = None
     pipeline_template: Optional[List[str]] = None
-    audio_ids: Optional[List[UUID]] = None
+    media_ids: Optional[List[UUID]] = None
 
 
 class PostAuthor(UserBase):
