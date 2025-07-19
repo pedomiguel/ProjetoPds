@@ -177,7 +177,6 @@ class MediaFileService(ABC):
         return allowed[0] if allowed else "application/octet-stream"
 
     def _extract_metadata(self, media: MediaFile):
-        return
         extractor = self.metadata_extractor
 
         if not extractor:

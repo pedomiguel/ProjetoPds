@@ -1,2 +1,1 @@
 from .media_metadata_extractor import MediaMetadataExtractor
-from .video_metadata_extractor import VideoMetadataExtractor

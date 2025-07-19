@@ -1,8 +1,9 @@
-from app.extractors.video_metadata_extractor import VideoMetadataExtractor
 from app.models.media_file_model import MediaType
 from app.services.media_file_service import MediaFileService
 from app.services.video_processing import SubtitleVideoStep, SpeedUpVideoStep
 from app.extractors import MediaMetadataExtractor
+
+from app.extractors.video_data_extractor import VideoDataExtractor
 
 
 class VideoMediaFileService(MediaFileService):
@@ -11,8 +12,8 @@ class VideoMediaFileService(MediaFileService):
         return {"subtitles": SubtitleVideoStep, "speedup": SpeedUpVideoStep}
 
     @property
-    def metadata_extractor(self) -> MediaMetadataExtractor:
-        return VideoMetadataExtractor
+    def metadata_extractor(self):
+        return MediaMetadataExtractor(strategies=[VideoDataExtractor()])
 
     @property
     def content_types(self) -> dict[MediaType, list[str]]:
