@@ -20,10 +20,10 @@ class UserService:
         if not user:
             raise NotFoundException("User not found")
 
-        audios = self.media_file_repository.find_media_by_user_id(user.id)
+        media_files = self.media_file_repository.find_media_by_user_id(user.id)
 
-        if audios:
-            user.audios = audios
+        if media_files:
+            user.media_files = media_files
 
         return user
 

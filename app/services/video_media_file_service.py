@@ -4,6 +4,7 @@ from app.services.media_file_service import MediaFileService
 from app.services.video_processing import SubtitleVideoStep, SpeedUpVideoStep
 from app.extractors import MediaMetadataExtractor
 
+
 class VideoMediaFileService(MediaFileService):
     @property
     def pipeline_step_factory(self) -> dict:

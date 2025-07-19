@@ -6,9 +6,11 @@ from typing import List, Optional
 from fastapi import UploadFile, BackgroundTasks
 from fastapi.responses import FileResponse
 
-from app.extractors.video_metadata_extractor import VideoMetadataExtractor
 from app.models import MediaFile, MediaType
 from app.exceptions import MediaTypeNotSupportedException, NotFoundException
+from app.exceptions.unable_to_create_pipeline_exception import (
+    UnableToCreatePipelineException,
+)
 from app.repositories import MediaFileRepository
 from app.services.pipeline_run_service import PipelineRunService
 from app.services.pipeline_step_service import PipelineStepService
@@ -33,8 +35,8 @@ class MediaFileService(ABC):
 
     @property
     @abstractmethod
-    def metadata_extractor(self) -> MediaMetadataExtractor:
-        return VideoMetadataExtractor()
+    def metadata_extractor(self) -> MediaMetadataExtractor | None:
+        pass
 
     def _validate_upload(self, file: UploadFile, media_type: MediaType) -> None:
         allowed = self.content_types.get(media_type, [])
@@ -64,15 +66,22 @@ class MediaFileService(ABC):
 
         return self.repository.create(media)
 
-    def _instantiate_pipeline_step(self, key: str) -> Optional[PipelineStepService]:
-        factory = self.pipeline_step_factory
+    def _instantiate_pipeline_step(self, key: str) -> PipelineStepService:
+        try:
+            factory = self.pipeline_step_factory
 
-        StepClass = factory.get(key)
+            StepClass = factory.get(key)
 
-        if StepClass:
-            return StepClass()
+            print(StepClass)
 
-        return None
+            if StepClass:
+                return StepClass()
+
+            raise NotFoundException(f"Pipeline step '{key}' not found.")
+        except NotFoundException as e:
+            raise e
+        except Exception:
+            raise UnableToCreatePipelineException()
 
     def get_media_type(self, file: UploadFile) -> MediaType:
         for media_type, allowed_types in self.content_types.items():
@@ -115,8 +124,7 @@ class MediaFileService(ABC):
 
         for key in pipeline:
             step = self._instantiate_pipeline_step(key)
-            if step:
-                steps_instances.append(step)
+            steps_instances.append(step)
 
         runner = PipelineRunService(steps_instances)
         all_media = runner.run(original_media)

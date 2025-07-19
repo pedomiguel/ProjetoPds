@@ -1,6 +1,4 @@
-from pathlib import Path
 from typing import List
-from uuid import UUID
 
 from app.services.pipeline_step_service import PipelineStepService
 from app.models.media_file_model import MediaFile
@@ -15,8 +13,11 @@ class PipelineRunService:
         current_media = original_media
 
         for step in self.steps:
-            new_media = step.process(current_media)
-            all_media.append(new_media)
-            current_media = new_media
+            try:
+                new_media = step.process(current_media)
+                all_media.append(new_media)
+                current_media = new_media
+            except Exception:
+                continue
 
         return all_media
